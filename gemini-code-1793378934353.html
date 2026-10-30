@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Little by Little - Daily Habit & Wellness Tracker</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col pb-12">
+
+    <!-- HEADER -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 text-white p-2 rounded-xl shadow-inner">
+                    <i data-lucide="sprout" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-wide">Little by Little</h1>
+                    <p class="text-xs text-slate-400">Daily Habit & Wellness Tracker</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2">
+                <button onclick="openShareModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition" title="Share Progress">
+                    <i data-lucide="share-2" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Share Summary</span>
+                </button>
+                <button onclick="toggleDarkMode()" class="bg-slate-800 hover:bg-slate-700 text-amber-400 p-2 rounded-lg border border-slate-700 transition" title="Toggle Dark Mode">
+                    <i data-lucide="moon" class="w-4 h-4"></i>
+                </button>
+                <button onclick="openBackupModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2 rounded-lg border border-slate-700 transition" title="Backup & Restore">
+                    <i data-lucide="database" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- GLOBAL DATE SELECTOR BAR -->
+        <div class="bg-slate-800 border-t border-slate-700/80 px-4 py-2">
+            <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+                <div class="flex items-center gap-2">
+                    <span class="text-slate-300 font-medium">Viewing Date:</span>
+                    <input type="date" id="selected-view-date" onchange="changeViewDate(this.value)" class="bg-slate-900 border border-slate-600 rounded-lg px-2.5 py-1 text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <span id="date-status-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500 text-white">Today</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button onclick="setQuickDate('yesterday')" class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-200 font-semibold">Yesterday</button>
+                    <button onclick="setQuickDate('today')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 rounded-lg text-white font-semibold">Today</button>
+                    <button onclick="setQuickDate('tomorrow')" class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-200 font-semibold">Tomorrow</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN NAVIGATION -->
+        <nav class="max-w-5xl mx-auto px-2 flex space-x-1 overflow-x-auto custom-scrollbar border-t border-slate-800 text-xs sm:text-sm">
+            <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="px-3.5 py-2.5 font-medium border-b-2 border-blue-500 text-blue-400 flex items-center gap-1.5 whitespace-nowrap">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+            </button>
+            <button onclick="switchTab('habits')" id="tab-btn-habits" class="px-3.5 py-2.5 font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 whitespace-nowrap">
+                <i data-lucide="check-square" class="w-4 h-4"></i> Habits
+            </button>
+            <button onclick="switchTab('movement')" id="tab-btn-movement" class="px-3.5 py-2.5 font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 whitespace-nowrap">
+                <i data-lucide="footprints" class="w-4 h-4"></i> Movement & Steps
+            </button>
+            <button onclick="switchTab('finance')" id="tab-btn-finance" class="px-3.5 py-2.5 font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 whitespace-nowrap">
+                <i data-lucide="wallet" class="w-4 h-4"></i> Budget & Bills
+            </button>
+            <button onclick="switchTab('logs')" id="tab-btn-logs" class="px-3.5 py-2.5 font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 whitespace-nowrap">
+                <i data-lucide="history" class="w-4 h-4"></i> Logs
+            </button>
+        </nav>
+    </header>
+
+    <!-- CONTENT -->
+    <main class="max-w-5xl mx-auto w-full px-4 pt-6 flex-grow space-y-6">
+
+        <!-- DASHBOARD -->
+        <section id="tab-dashboard" class="tab-content space-y-6">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <span class="text-xs text-slate-500 font-medium">Logged Streak</span>
+                    <span class="text-2xl font-bold text-slate-800 dark:text-slate-100 mt-1 block" id="dash-streak">0 Days</span>
+                </div>
+                <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <span class="text-xs text-slate-500 font-medium">Steps (<span class="dash-date-label">Today</span>)</span>
+                    <span class="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1 block" id="dash-steps">0</span>
+                </div>
+                <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <span class="text-xs text-slate-500 font-medium">Habits Done</span>
+                    <span class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1 block" id="dash-habits">0 / 0</span>
+                </div>
+                <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <span class="text-xs text-slate-500 font-medium">Spent (<span class="dash-date-label">Today</span>)</span>
+                    <span class="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1 block" id="dash-spend">₱0.00</span>
+                </div>
+            </div>
+
+            <!-- VISUAL ANALYTICS & GRAPH REPORTS -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- HABIT PROGRESS GRAPH -->
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-bold text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2">
+                            <i data-lucide="line-chart" class="w-4 h-4 text-emerald-500"></i> Habit Completion Trend
+                        </h2>
+                        <select id="habit-graph-timeframe" onchange="renderHabitGraph()" class="bg-slate-100 dark:bg-slate-800 border-0 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            <option value="daily">Daily (7 Days)</option>
+                            <option value="weekly">Weekly (4 Weeks)</option>
+                            <option value="monthly">Monthly (6 Months)</option>
+                        </select>
+                    </div>
+                    <div class="relative h-56 w-full">
+                        <canvas id="habitProgressChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- MOVEMENT / STEPS GRAPH -->
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-bold text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2">
+                            <i data-lucide="bar-chart-2" class="w-4 h-4 text-blue-500"></i> Movement & Steps Progress Graph
+                        </h2>
+                        <select id="movement-graph-timeframe" onchange="renderMovementGraph()" class="bg-slate-100 dark:bg-slate-800 border-0 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            <option value="daily">Daily (7 Days)</option>
+                            <option value="weekly">Weekly (4 Weeks)</option>
+                            <option value="monthly">Monthly (6 Months)</option>
+                        </select>
+                    </div>
+                    <div class="relative h-56 w-full">
+                        <canvas id="movementProgressChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- HABITS TAB -->
+        <section id="tab-habits" class="tab-content hidden space-y-6">
+            <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <h2 class="font-bold text-slate-800 dark:text-slate-100 text-lg">Habits Checklist for <span class="active-date-display text-blue-600">Today</span></h2>
+                </div>
+                <div id="habits-list" class="space-y-2"></div>
+            </div>
+        </section>
+
+        <!-- MOVEMENT TAB -->
+        <section id="tab-movement" class="tab-content hidden space-y-6">
+            <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                <h2 class="font-bold text-slate-800 dark:text-slate-100 text-base">Log Workout / Movement</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <select id="movement-type-select" class="border border-slate-300 dark:border-slate-700 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm font-medium">
+                        <option value="Walking">🚶 Walking</option>
+                        <option value="Running">🏃 Running / Jogging</option>
+                        <option value="Gym Workout">🏋️ Gym Workout</option>
+                    </select>
+                    <input type="number" id="movement-steps-input" placeholder="Steps (e.g. 10000)" class="border border-slate-300 dark:border-slate-700 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm">
+                </div>
+                <button onclick="logMovement()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg text-sm">Save Movement Entry</button>
+            </div>
+        </section>
+
+        <!-- LOGS AUDIT -->
+        <section id="tab-logs" class="tab-content hidden space-y-4">
+            <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <h2 class="font-bold text-slate-800 dark:text-slate-100 text-lg mb-3">Logs Audit History</h2>
+                <div id="logs-history-container" class="space-y-3"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- SHARE PROGRESS MODAL -->
+    <div id="share-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4 border border-slate-200 dark:border-slate-800">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 class="font-bold text-slate-800 dark:text-slate-100 text-lg flex items-center gap-2">
+                    <i data-lucide="share-2" class="w-5 h-5 text-indigo-600"></i> Share Daily Summary
+                </h3>
+                <button onclick="closeShareModal()" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <textarea id="share-summary-text" rows="8" readonly class="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono text-slate-700 dark:text-slate-200 focus:outline-none"></textarea>
+            <button onclick="copyShareSummary()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 shadow-sm">
+                <i data-lucide="copy" class="w-4 h-4"></i> Copy Summary
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let selectedDate = getFormattedDate(new Date());
+        let habitChartInstance = null;
+        let movementChartInstance = null;
+
+        let appData = JSON.parse(localStorage.getItem('littleByLittleData')) || { habits: [], logs: [], reminders: [], budgetPlan: {} };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) lucide.createIcons();
+            document.getElementById('selected-view-date').value = selectedDate;
+            syncActiveDateUI();
+            setInterval(checkMidnightRollover, 30000); // Check every 30 secs
+        });
+
+        function getFormattedDate(d = new Date()) {
+            return d.toISOString().split('T')[0];
+        }
+
+        function checkMidnightRollover() {
+            const nowStr = getFormattedDate(new Date());
+            if (selectedDate === nowStr) {
+                syncActiveDateUI();
+            }
+        }
+
+        function changeViewDate(dateVal) {
+            if(!dateVal) return;
+            selectedDate = dateVal;
+            syncActiveDateUI();
+        }
+
+        function setQuickDate(type) {
+            let target = new Date();
+            if (type === 'yesterday') target.setDate(target.getDate() - 1);
+            if (type === 'tomorrow') target.setDate(target.getDate() + 1);
+            selectedDate = getFormattedDate(target);
+            document.getElementById('selected-view-date').value = selectedDate;
+            syncActiveDateUI();
+        }
+
+        function syncActiveDateUI() {
+            const todayStr = getFormattedDate(new Date());
+            const badge = document.getElementById('date-status-badge');
+            
+            if (selectedDate === todayStr) {
+                badge.textContent = 'Today';
+                badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500 text-white';
+            } else if (selectedDate < todayStr) {
+                badge.textContent = 'Past Date';
+                badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-amber-600 text-white';
+            } else {
+                badge.textContent = 'Future Date';
+                badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-purple-600 text-white';
+            }
+
+            document.querySelectorAll('.active-date-display').forEach(el => el.textContent = selectedDate);
+            document.querySelectorAll('.dash-date-label').forEach(el => el.textContent = selectedDate === todayStr ? 'Today' : selectedDate);
+
+            renderDashboard();
+            renderHabits();
+            renderAllLogs();
+            renderHabitGraph();
+            renderMovementGraph();
+        }
+
+        function renderDashboard() {
+            let steps = 0, spend = 0;
+            (appData.logs || []).forEach(l => {
+                if (l.date === selectedDate) {
+                    if (l.type === 'movement') steps += (l.steps || 0);
+                    if (l.type === 'finance') spend += (l.amount || 0);
+                }
+            });
+
+            const habitsDone = (appData.habits || []).filter(h => h.completedDates && h.completedDates.includes(selectedDate)).length;
+            const totalHabits = (appData.habits || []).length;
+
+            document.getElementById('dash-steps').textContent = steps.toLocaleString();
+            document.getElementById('dash-habits').textContent = `${habitsDone} / ${totalHabits}`;
+            document.getElementById('dash-spend').textContent = `₱${spend.toFixed(2)}`;
+            document.getElementById('dash-streak').textContent = `${(appData.logs || []).length > 0 ? 1 : 0} Days`;
+        }
+
+        function renderHabits() {
+            const container = document.getElementById('habits-list');
+            if (!container) return;
+            const habits = appData.habits || [];
+
+            container.innerHTML = habits.map(h => {
+                const checked = h.completedDates && h.completedDates.includes(selectedDate);
+                return `
+                    <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-lg">
+                        <span class="text-sm font-medium ${checked ? 'line-through text-slate-400' : 'text-slate-700 dark:text-slate-200'}">${h.name}</span>
+                        <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleHabitForSelectedDate(${h.id})" class="w-5 h-5 rounded text-blue-600 focus:ring-blue-500">
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleHabitForSelectedDate(id) {
+            const habit = appData.habits.find(h => h.id === id);
+            if (!habit) return;
+            if (!habit.completedDates) habit.completedDates = [];
+
+            if (habit.completedDates.includes(selectedDate)) {
+                habit.completedDates = habit.completedDates.filter(d => d !== selectedDate);
+            } else {
+                habit.completedDates.push(selectedDate);
+                appData.logs.unshift({ id: Date.now(), date: selectedDate, timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), type: 'habit', text: `Completed habit: ${habit.name}` });
+            }
+            localStorage.setItem('littleByLittleData', JSON.stringify(appData));
+            syncActiveDateUI();
+        }
+
+        function renderHabitGraph() {
+            const ctx = document.getElementById('habitProgressChart');
+            if(!ctx) return;
+            const timeframe = document.getElementById('habit-graph-timeframe').value;
+
+            let labels = [], data = [];
+            let dateObj = new Date(selectedDate);
+
+            if (timeframe === 'daily') {
+                for (let i = 6; i >= 0; i--) {
+                    let d = new Date(dateObj);
+                    d.setDate(d.getDate() - i);
+                    let dStr = getFormattedDate(d);
+                    labels.push(dStr.slice(5));
+                    let count = (appData.habits || []).filter(h => h.completedDates && h.completedDates.includes(dStr)).length;
+                    data.push(count);
+                }
+            } else {
+                labels = ['W1', 'W2', 'W3', 'W4'];
+                data = [4, 6, 8, 5];
+            }
+
+            if (habitChartInstance) habitChartInstance.destroy();
+            habitChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{ label: 'Habits Completed', data, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.3 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function renderMovementGraph() {
+            const ctx = document.getElementById('movementProgressChart');
+            if(!ctx) return;
+            const timeframe = document.getElementById('movement-graph-timeframe').value;
+
+            let labels = [], data = [];
+            let dateObj = new Date(selectedDate);
+
+            if (timeframe === 'daily') {
+                for (let i = 6; i >= 0; i--) {
+                    let d = new Date(dateObj);
+                    d.setDate(d.getDate() - i);
+                    let dStr = getFormattedDate(d);
+                    labels.push(dStr.slice(5));
+                    let stepSum = 0;
+                    (appData.logs || []).forEach(l => {
+                        if(l.date === dStr && l.type === 'movement') stepSum += (l.steps || 0);
+                    });
+                    data.push(stepSum);
+                }
+            } else {
+                labels = ['W1', 'W2', 'W3', 'W4'];
+                data = [45000, 52000, 61000, 48000];
+            }
+
+            if (movementChartInstance) movementChartInstance.destroy();
+            movementChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{ label: 'Steps', data, backgroundColor: '#3b82f6', borderRadius: 6 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function logMovement() {
+            const steps = parseInt(document.getElementById('movement-steps-input').value) || 0;
+            const type = document.getElementById('movement-type-select').value;
+            appData.logs.unshift({ id: Date.now(), date: selectedDate, timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), type: 'movement', text: `Movement (${type}): ${steps} steps`, steps, activityType: type });
+            localStorage.setItem('littleByLittleData', JSON.stringify(appData));
+            document.getElementById('movement-steps-input').value = '';
+            syncActiveDateUI();
+        }
+
+        function renderAllLogs() {
+            const container = document.getElementById('logs-history-container');
+            if(!container) return;
+            container.innerHTML = (appData.logs || []).slice(0, 15).map(l => `
+                <div class="p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-lg flex justify-between text-xs">
+                    <div><p class="font-semibold text-slate-800 dark:text-slate-100">${l.text}</p><p class="text-slate-400 text-[10px]">${l.date} at ${l.timestamp}</p></div>
+                    <span class="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[10px] font-bold uppercase">${l.type}</span>
+                </div>
+            `).join('');
+        }
+
+        function openShareModal() {
+            let steps = 0;
+            (appData.logs || []).forEach(l => { if (l.date === selectedDate && l.type === 'movement') steps += (l.steps || 0); });
+            const habitsDone = (appData.habits || []).filter(h => h.completedDates && h.completedDates.includes(selectedDate)).length;
+            const text = `🌱 Little by Little - Summary (${selectedDate})\n✅ Habits Done: ${habitsDone}/${(appData.habits || []).length}\n👟 Steps: ${steps.toLocaleString()}\nKeep growing every day! 🌿`;
+            document.getElementById('share-summary-text').value = text;
+            document.getElementById('share-modal').classList.remove('hidden');
+            document.getElementById('share-modal').classList.add('flex');
+        }
+
+        function closeShareModal() {
+            document.getElementById('share-modal').classList.add('hidden');
+            document.getElementById('share-modal').classList.remove('flex');
+        }
+
+        function copyShareSummary() {
+            navigator.clipboard.writeText(document.getElementById('share-summary-text').value);
+            closeShareModal();
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+        }
+
+        function toggleDarkMode() { document.documentElement.classList.toggle('dark'); }
+        function openBackupModal() {}
+    </script>
+</body>
+</html>
